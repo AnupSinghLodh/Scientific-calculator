@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <link rel="icon" type="image/png" href="./favicon.png">
+    <title>Calculator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../express/index.css">
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        const OPERATION_CONFIG = {
+            "+": { requiresA: true, requiresB: true, useAngle: false, labelA: "Value of a", labelB: "Value of b" },
+            "-": { requiresA: true, requiresB: true, useAngle: false, labelA: "Value of a", labelB: "Value of b" },
+            "*": { requiresA: true, requiresB: true, useAngle: false, labelA: "Value of a", labelB: "Value of b" },
+            "/": { requiresA: true, requiresB: true, useAngle: false, labelA: "Value of a", labelB: "Value of b" },
+            "%": { requiresA: true, requiresB: true, useAngle: false, labelA: "Dividend (a)", labelB: "Divisor (b)" },
+            "^": { requiresA: true, requiresB: true, useAngle: false, labelA: "Base (a)", labelB: "Power (b)" },
+            sqrt: { requiresA: true, requiresB: false, useAngle: false, labelA: "Value for sqrt", labelB: "" },
+            sin: { requiresA: true, requiresB: false, useAngle: true, labelA: "Angle", labelB: "" },
+            cos: { requiresA: true, requiresB: false, useAngle: true, labelA: "Angle", labelB: "" },
+            tan: { requiresA: true, requiresB: false, useAngle: true, labelA: "Angle", labelB: "" },
+            asin: { requiresA: true, requiresB: false, useAngle: true, labelA: "Value [-1, 1]", labelB: "" },
+            acos: { requiresA: true, requiresB: false, useAngle: true, labelA: "Value [-1, 1]", labelB: "" },
+            atan: { requiresA: true, requiresB: false, useAngle: true, labelA: "Value", labelB: "" },
+            sinh: { requiresA: true, requiresB: false, useAngle: false, labelA: "Value", labelB: "" },
+            cosh: { requiresA: true, requiresB: false, useAngle: false, labelA: "Value", labelB: "" },
+            tanh: { requiresA: true, requiresB: false, useAngle: false, labelA: "Value", labelB: "" },
+            log: { requiresA: true, requiresB: false, useAngle: false, labelA: "Positive value", labelB: "" },
+            ln: { requiresA: true, requiresB: false, useAngle: false, labelA: "Positive value", labelB: "" },
+            abs: { requiresA: true, requiresB: false, useAngle: false, labelA: "Value", labelB: "" },
+            fact: { requiresA: true, requiresB: false, useAngle: false, labelA: "Non-negative integer", labelB: "" },
+            exp: { requiresA: true, requiresB: false, useAngle: false, labelA: "Power for e^x", labelB: "" },
+            pi: { requiresA: false, requiresB: false, useAngle: false, labelA: "", labelB: "" },
+            e: { requiresA: false, requiresB: false, useAngle: false, labelA: "", labelB: "" }
+        };
+
+        function updateFieldState() {
+            const operator = document.getElementById("operator").value;
+            if (!operator) return;
+            const config = OPERATION_CONFIG[operator];
+            const aInput = document.getElementById("a");
+            const bInput = document.getElementById("b");
+            const aWrap = document.getElementById("a-wrap");
+            const bWrap = document.getElementById("b-wrap");
+            const angleWrap = document.getElementById("angle-wrap");
+
+            aWrap.style.display = config.requiresA ? "block" : "none";
+            bWrap.style.display = config.requiresB ? "block" : "none";
+            angleWrap.style.display = config.useAngle ? "block" : "none";
+
+            aInput.required = config.requiresA;
+            bInput.required = config.requiresB;
+
+            if (config.requiresA) {
+                aInput.placeholder = config.labelA;
+            }
+            if (config.requiresB) {
+                bInput.placeholder = config.labelB;
+            } else {
+                bInput.value = "";
+            }
+        }
+
+        async function sendRequest(event) {
+            if (event) {
+                event.preventDefault();
+            }
+
+            const a = document.getElementById("a").value.trim();
+            const operator = document.getElementById("operator").value;
+            const b = document.getElementById("b").value.trim();
+            const angleMode = document.getElementById("angle-mode").value;
+            const parent = document.getElementById("solution");
+            const button = document.getElementById("solve-btn");
+            const config = OPERATION_CONFIG[operator];
+
+            if (config.requiresA && a === "") {
+                parent.innerHTML = `<p class="error-text"><strong>Error:</strong> Please enter value of a.</p>`;
+                return;
+            }
+
+            if (config.requiresB && b === "") {
+                parent.innerHTML = `<p class="error-text"><strong>Error:</strong> Please enter value of b.</p>`;
+                return;
+            }
+
+            if (config.requiresA && Number.isNaN(Number(a))) {
+                parent.innerHTML = `<p class="error-text"><strong>Error:</strong> Value of a must be a valid number.</p>`;
+                return;
+            }
+
+            if (config.requiresB && Number.isNaN(Number(b))) {
+                parent.innerHTML = `<p class="error-text"><strong>Error:</strong> Value of b must be a valid number.</p>`;
+                return;
+            }
+
+            button.disabled = true;
+            button.textContent = "Calculating...";
+            parent.innerHTML = `<p class="info-text">Calculating result...</p>`;
+
+            try {
+                const res = await axios.post("http://localhost:3000/Calculator", {
+                    a,
+                    operator,
+                    b,
+                    angleMode
+                });
+
+                const data = res.data;
+                parent.innerHTML = `
+                    <p><strong>Answer:</strong> ${data.ans}</p>
+                `;
+            } catch (error) {
+                const errData = error.response?.data;
+                parent.innerHTML = `<p class="error-text"><strong>Error:</strong> ${errData?.mes || errData?.ans || error.message}</p>`;
+            } finally {
+                button.disabled = false;
+                button.textContent = "Solve";
+            }
+        }
+
+        function selectOperator(op) {
+            document.getElementById("operator").value = op;
+            document.getElementById("operator-grid").style.display = "none";
+            document.getElementById("selected-op-display").style.display = "flex";
+            
+            const opNames = {
+                "+": "Addition (+)", "-": "Subtraction (-)", "*": "Multiplication (×)", "/": "Division (÷)",
+                "%": "Modulo (%)", "^": "Power (xʸ)", "sqrt": "Square Root (√)", "sin": "Sine", "cos": "Cosine", "tan": "Tangent",
+                "asin": "Inverse Sine (sin⁻¹)", "acos": "Inverse Cosine (cos⁻¹)", "atan": "Inverse Tangent (tan⁻¹)",
+                "sinh": "Hyperbolic Sine (sinh)", "cosh": "Hyperbolic Cosine (cosh)", "tanh": "Hyperbolic Tangent (tanh)",
+                "log": "Log Base 10", "ln": "Natural Log", "abs": "Absolute Value", "fact": "Factorial (x!)",
+                "exp": "Exponential (eˣ)", "pi": "Constant (π)", "e": "Constant (e)"
+            };
+            
+            document.getElementById("active-op-text").textContent = opNames[op] || op;
+            document.getElementById("solve-btn").style.display = "block";
+            document.getElementById("solution").innerHTML = "";
+            
+            updateFieldState();
+        }
+
+        function changeOperator() {
+            document.getElementById("operator").value = "";
+            document.getElementById("operator-grid").style.display = "grid";
+            document.getElementById("selected-op-display").style.display = "none";
+            
+            document.getElementById("a-wrap").style.display = "none";
+            document.getElementById("b-wrap").style.display = "none";
+            document.getElementById("angle-wrap").style.display = "none";
+            document.getElementById("solve-btn").style.display = "none";
+        }
+
+        window.addEventListener("DOMContentLoaded", () => {
+            changeOperator();
+        });
+    </script>
+</head>
+
+<body>
+    <div class="bg-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+    <main class="calculator-container">
+        <form class="calculator-form" onsubmit="sendRequest(event)">
+            <div class="title-wrap">
+                <h1>Scientific Calculator</h1>
+                <p class="subtitle">Fast calculations for basic and scientific operations</p>
+            </div>
+
+            <div id="operator-section" class="field-block">
+                <label class="field-label">Select Operation</label>
+                <input type="hidden" id="operator" value="">
+                
+                <div id="operator-grid" class="operator-grid">
+                    <button type="button" class="op-btn" onclick="selectOperator('+')">+</button>
+                    <button type="button" class="op-btn" onclick="selectOperator('-')">-</button>
+                    <button type="button" class="op-btn" onclick="selectOperator('*')">×</button>
+                    <button type="button" class="op-btn" onclick="selectOperator('/')">÷</button>
+                    <button type="button" class="op-btn" onclick="selectOperator('%')">%</button>
+                    <button type="button" class="op-btn" onclick="selectOperator('^')">xʸ</button>
+                    <button type="button" class="op-btn" onclick="selectOperator('sqrt')">√</button>
+                    <button type="button" class="op-btn" onclick="selectOperator('sin')">sin</button>
+                    <button type="button" class="op-btn" onclick="selectOperator('cos')">cos</button>
+                    <button type="button" class="op-btn" onclick="selectOperator('tan')">tan</button>
+                    <button type="button" class="op-btn" onclick="selectOperator('asin')">sin⁻¹</button>
+                    <button type="button" class="op-btn" onclick="selectOperator('acos')">cos⁻¹</button>
+                    <button type="button" class="op-btn" onclick="selectOperator('atan')">tan⁻¹</button>
+                    <button type="button" class="op-btn" onclick="selectOperator('sinh')">sinh</button>
+                    <button type="button" class="op-btn" onclick="selectOperator('cosh')">cosh</button>
+                    <button type="button" class="op-btn" onclick="selectOperator('tanh')">tanh</button>
+                    <button type="button" class="op-btn" onclick="selectOperator('log')">log</button>
+                    <button type="button" class="op-btn" onclick="selectOperator('ln')">ln</button>
+                    <button type="button" class="op-btn" onclick="selectOperator('abs')">|x|</button>
+                    <button type="button" class="op-btn" onclick="selectOperator('fact')">x!</button>
+                    <button type="button" class="op-btn" onclick="selectOperator('exp')">eˣ</button>
+                    <button type="button" class="op-btn" onclick="selectOperator('pi')">π</button>
+                    <button type="button" class="op-btn" onclick="selectOperator('e')">e</button>
+                </div>
+
+                <div id="selected-op-display" class="selected-op-display" style="display: none;">
+                    <span id="active-op-text" class="active-op-text"></span>
+                    <button type="button" class="change-op-btn" onclick="changeOperator()">Change</button>
+                </div>
+            </div>
+
+            <div class="input-grid">
+                <div id="a-wrap" class="field-block">
+                    <label class="field-label" for="a">Input A</label>
+                    <input class="calc-input" id="a" type="number" step="any" placeholder="Value of a" required>
+                </div>
+
+                <div id="b-wrap" class="field-block">
+                    <label class="field-label" for="b">Input B</label>
+                    <input class="calc-input" id="b" type="number" step="any" placeholder="Value of b" required>
+                </div>
+            </div>
+
+            <div id="angle-wrap" class="field-block">
+                <label class="field-label" for="angle-mode">Angle Mode</label>
+                <select class="calc-input" id="angle-mode">
+                    <option value="rad">Radians</option>
+                    <option value="deg">Degrees</option>
+                </select>
+            </div>
+
+            <button class="solve-btn" id="solve-btn" type="submit">Solve</button>
+        </form>
+
+        <section id="solution" class="solution-box" aria-live="polite"></section>
+    </main>
+</body>
+
+</html>
