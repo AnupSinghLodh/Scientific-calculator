@@ -83,6 +83,18 @@ body {
     100% { background-position: 300% 50%; }
 }
 
+@keyframes footerFloat {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+    100% { transform: translateY(0); }
+}
+
+@keyframes footerGlow {
+    0% { opacity: 0.7; }
+    50% { opacity: 1; }
+    100% { opacity: 0.7; }
+}
+
 .calculator-container {
     width: 100%;
     max-width: 480px;
@@ -344,6 +356,39 @@ select.calc-input optgroup, select.calc-input option {
     background: rgba(255, 255, 255, 0.1);
     color: #fff;
     border-color: rgba(255, 255, 255, 0.5);
+}
+
+.app-footer {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+    text-align: center;
+    color: #cbd5e1;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    letter-spacing: 0.3px;
+    padding: 8px 14px;
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: slideUpFadeIn 0.8s ease-out, footerFloat 4s ease-in-out infinite;
+}
+
+.app-footer p {
+    margin: 0;
+}
+
+.app-footer p:first-child {
+    background: linear-gradient(90deg, #a855f7, #ec4899, #60a5fa, #a855f7);
+    background-size: 250% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: textShine 6s linear infinite, footerGlow 3s ease-in-out infinite;
 }
 
 @media (max-width: 680px) {
