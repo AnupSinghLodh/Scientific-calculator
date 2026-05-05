@@ -361,8 +361,10 @@ select.calc-input optgroup, select.calc-input option {
 .app-footer {
     position: fixed;
     bottom: 16px;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 0;
+    right: 0;
+    width: fit-content;
+    margin: 0 auto;
     z-index: 2;
     text-align: center;
     color: #cbd5e1;
