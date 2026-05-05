@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./index.css">
     <meta name='viewport' content='width=device-width, initial-scale=1'>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="./index.js"></script>
     <script>
         const OPERATION_CONFIG = {
             "+": { requiresA: true, requiresB: true, useAngle: false, labelA: "Value of a", labelB: "Value of b" },
@@ -66,7 +66,7 @@
             }
         }
 
-        async function sendRequest(event) {
+        function sendRequest(event) {
             if (event) {
                 event.preventDefault();
             }
@@ -104,12 +104,12 @@
             parent.innerHTML = `<p class="info-text">Calculating result...</p>`;
 
             try {
-                const res = await axios.post("http://localhost:3000/Calculator", {
+                const res = calculate(
                     a,
                     operator,
                     b,
                     angleMode
-                });
+                );
 
                 const data = res.data;
                 parent.innerHTML = `
